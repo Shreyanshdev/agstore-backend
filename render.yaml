@@ -1,0 +1,51 @@
+services:
+  - type: web
+    name: agstore-backend
+    runtime: node
+    plan: starter
+    region: oregon
+    buildCommand: npm install
+    startCommand: node app.js
+    healthCheckPath: /
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        generateValue: true
+      - key: MONGO_URI
+        fromDatabase:
+          name: agstore-mongodb
+          property: connectionString
+      - key: ACCESS_TOKEN_SECRET
+        generateValue: true
+      - key: REFRESH_TOKEN_SECRET
+        generateValue: true
+      - key: JWT_REFRESH_SECRET
+        generateValue: true
+      - key: COOKIE_PASSWORD
+        generateValue: true
+      - key: COOKIE_SECRET
+        generateValue: true
+      - key: RAZORPAY_KEY_ID
+        sync: false
+      - key: RAZORPAY_KEY_SECRET
+        sync: false
+      - key: GOOGLE_MAPS_API_KEY
+        sync: false
+      - key: ALLOWED_ORIGINS
+        sync: false
+    autoDeploy: true
+    branch: main
+    rootDir: backend
+
+databases:
+  - name: agstore-mongodb
+    databaseName: agstoreDB
+    plan: starter
+    region: oregon
+
+# Optional: Add a Redis instance for session storage (recommended for production)
+# - name: agstore-redis
+#   plan: starter
+#   region: oregon
+#   maxmemoryPolicy: allkeys-lru
