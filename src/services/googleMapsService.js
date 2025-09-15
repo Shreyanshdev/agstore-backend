@@ -2,7 +2,7 @@
 
 export class GoogleMapsService {
   constructor() {
-    this.apiKey = process.env.GOOGLE_MAPS_API_KEY || 'AIzaSyBZkClivKdjixXbLHgYQlXzzR2IDxBx4VQ';
+    this.apiKey = process.env.GOOGLE_MAPS_API_KEY;
     this.baseUrl = 'https://maps.googleapis.com/maps/api';
     this.requestsPerSecond = 0;
     this.lastRequestTime = Date.now();
@@ -10,7 +10,8 @@ export class GoogleMapsService {
     // Validate API key format
     if (!this.apiKey || this.apiKey.length < 20) {
       console.error('❌ Invalid Google Maps API Key:', this.apiKey ? 'Too short' : 'Missing');
-      console.error('⚠️ Using fallback geocoding - please set GOOGLE_MAPS_API_KEY environment variable');
+      console.error('⚠️ Please set GOOGLE_MAPS_API_KEY environment variable');
+      throw new Error('Google Maps API Key is required but not provided');
     } else {
       console.log('✅ Google Maps API Key loaded successfully');
     }
