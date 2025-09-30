@@ -10,9 +10,21 @@ class MSG91Service {
         this.senderId = process.env.MSG91_SENDER_ID || 'VERIFY';
         this.route = process.env.MSG91_ROUTE || '4'; // Transactional route
 
+        console.log('🔧 MSG91 Service Configuration:');
+        console.log(`   Auth Key: ${this.authKey ? this.authKey.substring(0, 8) + '...' : 'NOT SET'}`);
+        console.log(`   Sender ID: ${this.senderId}`);
+        console.log(`   Route: ${this.route}`);
+
         if (!this.authKey) {
             console.error('❌ MSG91_AUTH_KEY environment variable is required');
-            throw new Error('MSG91 configuration missing');
+            console.error('⚠️ Please set MSG91_AUTH_KEY in your environment variables');
+            throw new Error('MSG91 configuration missing - MSG91_AUTH_KEY not set');
+        }
+
+        if (!this.senderId) {
+            console.error('❌ MSG91_SENDER_ID environment variable is required');
+            console.error('⚠️ Please set MSG91_SENDER_ID in your environment variables');
+            throw new Error('MSG91 configuration missing - MSG91_SENDER_ID not set');
         }
     }
 
@@ -32,20 +44,36 @@ class MSG91Service {
             const message = `Your OTP is: ${otp}. Valid for 10 minutes. Do not share with anyone.`;
 
             console.log(`📱 Sending OTP to ${phoneNumber.substring(0, 3)}***${phoneNumber.substring(7)}`);
+            console.log(`🔑 Using Auth Key: ${this.authKey ? this.authKey.substring(0, 8) + '...' : 'NOT SET'}`);
+            console.log(`📤 Using Sender ID: ${this.senderId}`);
 
-            // MSG91 API endpoint and parameters
-            const url = 'https://control.msg91.com/api/sendhttp.php';
-            const params = {
+            // Use the newer MSG91 API v2 endpoint
+            const url = 'https://api.msg91.com/api/v5/otp';
+            
+            const payload = {
                 authkey: this.authKey,
-                mobiles: phoneNumber,
+                mobile: phoneNumber,
                 message: message,
                 sender: this.senderId,
                 route: this.route,
                 country: '91',
-                response: 'json'
+                otp: otp,
+                otp_expiry: 10 // 10 minutes
             };
 
-            const response = await axios.get(url, { params, timeout: 10000 });
+            console.log('📤 MSG91 Request Payload:', {
+                ...payload,
+                authkey: payload.authkey ? payload.authkey.substring(0, 8) + '...' : 'NOT SET'
+            });
+
+            const response = await axios.post(url, payload, { 
+                timeout: 15000,
+                headers: {
+                    'Content-Type': 'application/json'
+                }
+            });
+
+            console.log('📥 MSG91 Response:', response.data);
 
             if (response.data && response.data.type === 'success') {
                 console.log(`✅ OTP sent successfully to ${phoneNumber.substring(0, 3)}***${phoneNumber.substring(7)}`);
@@ -55,11 +83,15 @@ class MSG91Service {
                     phoneNumber: phoneNumber
                 };
             } else {
+                console.error('❌ MSG91 API Error:', response.data);
                 throw new Error(response.data?.message || 'Failed to send OTP');
             }
 
         } catch (error) {
             console.error('❌ MSG91 send OTP error:', error.message);
+            if (error.response) {
+                console.error('❌ MSG91 API Error Response:', error.response.data);
+            }
             throw new Error(`Failed to send OTP: ${error.message}`);
         }
     }
@@ -140,5 +172,31 @@ class MSG91Service {
     }
 }
 
-// Export singleton instance
-export default new MSG91Service();
+// Export singleton instance with lazy initialization
+let msg91Instance = null;
+
+export default {
+    getInstance() {
+        if (!msg91Instance) {
+            msg91Instance = new MSG91Service();
+        }
+        return msg91Instance;
+    },
+    
+    // Proxy methods for backward compatibility
+    async sendOTP(phoneNumber, otp) {
+        return this.getInstance().sendOTP(phoneNumber, otp);
+    },
+    
+    generateOTP(length = 6) {
+        return this.getInstance().generateOTP(length);
+    },
+    
+    verifyOTP(phoneNumber, otp, storedOTPData) {
+        return this.getInstance().verifyOTP(phoneNumber, otp, storedOTPData);
+    },
+    
+    formatPhoneNumber(phoneNumber) {
+        return this.getInstance().formatPhoneNumber(phoneNumber);
+    }
+};

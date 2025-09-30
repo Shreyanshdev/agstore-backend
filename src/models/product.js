@@ -128,12 +128,22 @@ productSchema.pre('save', function(next) {
 });
 
 // Indexes for better search performance
+// Text index for full-text search (keeping for backward compatibility)
 productSchema.index({ name: 'text', description: 'text', tags: 'text' });
-productSchema.index({ category: 1 });
+
+// Individual field indexes for partial matching and filtering
+productSchema.index({ name: 1 });
+productSchema.index({ description: 1 });
 productSchema.index({ brand: 1 });
 productSchema.index({ tags: 1 });
+productSchema.index({ category: 1 });
 productSchema.index({ featured: 1 });
-productSchema.index({ sku: 1 });
+productSchema.index({ status: 1 });
+
+// Compound indexes for common query patterns
+productSchema.index({ status: 1, category: 1 });
+productSchema.index({ status: 1, featured: 1 });
+productSchema.index({ status: 1, tags: 1 });
 
 const Product = mongoose.model("Product", productSchema);
 

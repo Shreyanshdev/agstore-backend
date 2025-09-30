@@ -72,6 +72,11 @@ RAZORPAY_KEY_SECRET=your-razorpay-key-secret
 # Google Maps API
 GOOGLE_MAPS_API_KEY=your-google-maps-api-key
 
+# MSG91 SMS Service
+MSG91_AUTH_KEY=your-msg91-auth-key
+MSG91_SENDER_ID=your-sender-id
+MSG91_ROUTE=4
+
 # CORS Configuration
 ALLOWED_ORIGINS=http://localhost:3000,http://localhost:8081,https://yourdomain.com
 
@@ -312,6 +317,9 @@ REFRESH_TOKEN_SECRET=your-production-refresh-secret
 RAZORPAY_KEY_ID=your-production-razorpay-key
 RAZORPAY_KEY_SECRET=your-production-razorpay-secret
 GOOGLE_MAPS_API_KEY=your-production-google-maps-key
+MSG91_AUTH_KEY=your-production-msg91-auth-key
+MSG91_SENDER_ID=your-production-sender-id
+MSG91_ROUTE=4
 ALLOWED_ORIGINS=https://yourdomain.com,https://app.yourdomain.com
 ```
 

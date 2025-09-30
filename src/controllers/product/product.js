@@ -121,15 +121,26 @@ export const getAllProducts = async (req, res) => {
       .limit(parseInt(limit));
 
     if (search) {
-      query = Product.find({
-        ...filter,
-        $text: { $search: search }
-      })
-      .populate('category', 'name')
-      .populate('relatedProducts', 'name images basePrice discountPrice')
-      .sort({ score: { $meta: 'textScore' }, [sort]: sortOrder })
-      .skip(skip)
-      .limit(parseInt(limit));
+      const searchQuery = search.trim();
+      if (searchQuery.length > 0) {
+        // Create regex pattern for partial matching
+        const regexPattern = new RegExp(searchQuery, 'i');
+        
+        query = Product.find({
+          ...filter,
+          $or: [
+            { name: regexPattern },
+            { description: regexPattern },
+            { brand: regexPattern },
+            { tags: regexPattern }
+          ]
+        })
+        .populate('category', 'name')
+        .populate('relatedProducts', 'name images basePrice discountPrice')
+        .sort({ [sort]: sortOrder })
+        .skip(skip)
+        .limit(parseInt(limit));
+      }
     }
 
     const products = await query.exec();
@@ -225,7 +236,7 @@ export const getWholesaleProducts = async (req, res) => {
   }
 };
 
-// Search products by tags and text
+// Search products by tags and text with improved partial matching
 export const searchProducts = async (req, res) => {
   const {
     q,
@@ -243,13 +254,28 @@ export const searchProducts = async (req, res) => {
 
     let filter = { status: 'active' };
 
+    // Improved search logic with partial matching
     if (q) {
-      filter.$text = { $search: q };
+      const searchQuery = q.trim();
+      if (searchQuery.length > 0) {
+        // Create regex pattern for partial matching
+        const regexPattern = new RegExp(searchQuery, 'i');
+        
+        // Search in multiple fields with partial matching
+        filter.$or = [
+          { name: regexPattern },
+          { description: regexPattern },
+          { brand: regexPattern },
+          { tags: regexPattern }
+        ];
+      }
     }
 
     if (tags) {
       const tagArray = tags.split(',').map(tag => tag.trim().toLowerCase());
-      filter.tags = { $in: tagArray };
+      // Use regex for partial tag matching
+      const tagRegexArray = tagArray.map(tag => new RegExp(tag, 'i'));
+      filter.tags = { $in: tagRegexArray };
     }
 
     if (category) {
@@ -259,7 +285,7 @@ export const searchProducts = async (req, res) => {
     let query = Product.find(filter)
       .populate('category', 'name')
       .populate('relatedProducts', 'name images basePrice discountPrice')
-      .sort(q ? { score: { $meta: 'textScore' } } : { [sort]: sortOrder })
+      .sort({ [sort]: sortOrder })
       .skip(skip)
       .limit(parseInt(limit));
 
