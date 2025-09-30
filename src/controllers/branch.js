@@ -2,11 +2,12 @@ import Branch from "../models/branch.js";
 
 export const addBranch = async (req, res) => {
     try {
-        const { name, address, location } = req.body;
+        const { name, address, location, phone } = req.body;
         const newBranch = new Branch({
             name,
             address,
             location, // { latitude: Number, longitude: Number }
+            phone, // Include phone number
         });
         await newBranch.save();
         return res.status(201).json({ message: "Branch created successfully", branch: newBranch });

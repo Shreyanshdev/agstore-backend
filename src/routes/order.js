@@ -18,7 +18,8 @@ import {
     getHistoryOrders,
     updateDeliveryPartnerLocation,
     getOptimizedRoute,
-    getGoogleMapsDirections
+    getGoogleMapsDirections,
+    cancelOrder
 } from "../controllers/order/order.js";
 
 import { verifyToken } from "../middleware/auth.js";
@@ -45,6 +46,7 @@ router.post("/order/:orderId/optimize-route", getOptimizedRoute);
 router.post("/order/:orderId/google-directions", getGoogleMapsDirections);
 router.patch("/order/:orderId/status", updateOrderStatus);
 router.patch("/order/:orderId/confirm-receipt", verifyToken, confirmDeliveryReceipt);
+router.post("/order/:orderId/cancel", cancelOrder);
 router.delete('/orders/:orderId', deleteOrder);
 
 export default router;

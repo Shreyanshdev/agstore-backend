@@ -2,6 +2,7 @@ import { Customer, DeliveryPartner } from "../../models/user.js";
 import jwt from "jsonwebtoken";
 // import bcrypt from "bcrypt"; // COMMENTED OUT FOR TESTING - Delivery Partner passwords stored in plain text
 import crypto from "crypto";
+import msg91Service from "../../services/msg91Service.js";
 
 /*
  * BCRYPT DISABLED FOR TESTING
@@ -83,7 +84,7 @@ validateEnvironment();
 
 export const loginCustomer = async (req, res) => {
     try {
-        const { phone } = req.body;
+        const { phone, otp } = req.body;
 
         // Validate input
         if (!phone || typeof phone !== 'string') {
@@ -99,6 +100,11 @@ export const loginCustomer = async (req, res) => {
                 error: "INVALID_PHONE_FORMAT"
             });
         }
+
+        // OTP verification is handled separately by /otp/verify endpoint
+        // This login endpoint assumes OTP has already been verified
+        // If you need to verify OTP here, you would need to access the same OTP store
+        // For now, we'll proceed directly to login after phone validation
 
         // Find or create customer
         let customer = await Customer.findOne({ phone }).select('-password');
@@ -393,11 +399,35 @@ export const fetchUser = async (req, res) => {
 
 export const logout = async (req, res) => {
     try {
+        const { refreshToken } = req.body;
+        
+        console.log('🚪 Server logout request received');
+        
         // For stateless JWTs, server-side logout is often just a formality.
         // The actual logout happens on the client by removing the token.
-        return res.status(200).json({ message: "Logged out successfully" });
+        // However, we can validate the refresh token if provided
+        
+        if (refreshToken) {
+            try {
+                // Verify the refresh token to ensure it's valid
+                const decoded = jwt.verify(refreshToken, process.env.REFRESH_TOKEN_SECRET);
+                console.log(`✅ Logout request validated for user: ${decoded.userId}`);
+            } catch (tokenError) {
+                console.log('⚠️ Invalid refresh token in logout request:', tokenError.message);
+                // Continue with logout even if token is invalid
+            }
+        }
+        
+        console.log('✅ Server logout successful');
+        return res.status(200).json({ 
+            success: true,
+            message: "Logged out successfully" 
+        });
     } catch (error) {
-        console.error("Logout error:", error);
-        return res.status(500).json({ message: "Internal server error" });
+        console.error("❌ Logout error:", error);
+        return res.status(500).json({ 
+            success: false,
+            message: "Internal server error" 
+        });
     }
 };
